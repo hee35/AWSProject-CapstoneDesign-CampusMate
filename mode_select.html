@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>모드 선택</title>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ nickname }}님 안녕하세요!</h1>
+        <div class="button-container">
+            <form action="/friend" method="get">
+                <button type="submit">친구 모드</button>
+            </form>
+            <form action="/professional" method="get">
+                <button type="submit">전문가 모드</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

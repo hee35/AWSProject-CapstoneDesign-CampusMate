@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css">
+  <title>친구 모드</title>
+  <style>
+    /* 로딩 애니메이션 */
+    .loading {
+        display: none;
+        text-align: center;
+        font-size: 18px;
+        color: #1b53cdc8;
+        margin-top: 20px;
+    }
+    .loading span {
+        animation: blink 1s infinite;
+    }
+    @keyframes blink {
+        50% {
+            opacity: 0;
+        }
+    }
+
+    .chat-section {
+        margin-top: 20px;
+    }
+    .message {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .message.user {
+        justify-content: flex-end;
+    }
+    .message.assistant {
+        justify-content: flex-start;
+    }
+
+    .bubble {
+        background-color: #ffffff;
+        padding: 10px 15px;
+        border-radius: 15px;
+        max-width: 70%;
+    }
+
+    input[type="text"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+  </style>
+  <script>
+    function showLoading() {
+      document.getElementById('loading').style.display = 'block';
+    }
+  </script>
+</head>
+<body>
+  <div style="position: fixed; top: 20px; right: 20px;">
+      <form action="/professional" method="get">
+          <button type="submit" >전문가 모드</button>
+      </form>
+    </div>
+  <div class="container">
+    <h1>학교 생활 상담</h1>
+
+    <div class="chat-section">
+      {% if chat_history %}
+        {% for message in chat_history %}
+          <div class="message {{ 'user' if message.role == 'user' else 'assistant' }}">
+            <div class="bubble {{ message.role }}">{{ message.content }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="message assistant">
+          <div class="bubble assistant">
+            안녕! 요즘 학교 생활 어때?
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- 로딩 메시지 -->
+    <div class="loading" id="loading">
+      <span>로딩 중...</span>
+    </div>
+
+    <!-- 채팅 답변 요청 폼 -->
+    <div class="input-section">
+      <form action="/friend" method="post" onsubmit="showLoading()">
+        <input type="hidden" name="prompt_type" value="friend">
+        <input type="text" name="user_input" placeholder="고민을 입력해보세요." value="{{ user_input if user_input else '' }}" required>
+        <p>1분에 한번씩 질문하세요. 챗봇은 잘못된 응답을 할 수 있습니다.</p>
+        <button type="submit">답변 받기</button>
+      </form>
+    </div>
+
+    <!-- 대화 기록 초기화 폼 -->
+    <div class="button-container">
+      <form action="/reset" method="post">
+        <input type="hidden" name="prompt_type" value="friend">
+        <button type="submit" class="reset-button">대화 기록 초기화</button>
+      </form>
+    </div>
+  </div>
+  
+</body>
+</html>
