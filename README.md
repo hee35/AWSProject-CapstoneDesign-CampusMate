@@ -5,5 +5,5 @@
 - `register.html`: Register page  
 - `login.html`: Login page  
 - `mode_select.html`: Chat mode selection page  
-- `friend.html`: Casual chat  
-- `professional.html`: Professional chat  
+- `friend.html`: Casual chat mode page
+- `professional.html`: Professional chat mode page  
