@@ -8,7 +8,7 @@
 - `friend.html`: Casual chat mode page
 - `professional.html`: Professional chat mode page  
 
----
+
 # Server: Python(FastAPI)
 
 1. 회원가입
@@ -91,3 +91,152 @@
     
     1. 대화 기록 초기화
     2. 채팅 화면 재연결
+  
+
+# 벡터 DB 생성 과정
+
+```python
+@app.on_event("startup")
+async def startup_event():
+    migrate()
+    update_embeddings() 
+```
+
+서버 시작 할 때마다 `migrate()`, `update_embeddings()` 실행
+
+1. `def migrate()`
+    1. `mis_db` 와 연결
+    2. 사용할 컬럼만 선택하여 가져오기
+    3. `campus-mate` 와 연결
+    4. 벡터 db에 들어갈 포멧으로 변환
+        
+        ```python
+        def build_content(row):
+            admission_year, grade, semester, category, subject, credit, prerequisite, note, major = row
+            return f"""
+        전공: {major}
+        과목명: {subject}
+        기준 학번: {admission_year}
+        학년/학기: {grade}학년 {semester}
+        카테고리: {category}
+        학점: {credit}
+        설명: {note or '없음'}
+        선수과목: {prerequisite or '없음'}
+        """
+        ```
+        
+    5. `campus-mate`에 INSERT
+2. `def update_embeddings()`
+    1. `campus-mate` 와 연결
+    2. 임베딩 안된 행만 선택
+    3. 벡터로 변환: 임베딩 모델 호출(Titan Text Embeddings V2)
+        
+        ```
+        def get_embedding(text: str) -> list[float]:
+            body = {
+              "inputText": text,
+              "dimensions": 512, # 선택 가능한 값: 256, 512, 1024
+              "normalize": True # 벡터 정규화 여부
+            }
+        ```
+        
+    4. 임베딩 성공한 경우 UPDATE
+
+# 벡터 DB 검색 과정 `{rag_context}`
+
+1. 벡터 검색으로 관련 문서 찾기 `def search_similar_documents`
+    1. 질문을 임베딩으로 변환(Titan Text Embeddings V2)
+    2. PostgreSQL에서 벡터 유사도 검색
+    3. 결과를 딕셔너리 형태로 변환 하여 전달
+2. 검색된 문서들 정리하여 전달 `def build_rag_context`
+    - 검색된 문서 없는 경우: "관련 정보를 찾을 수 없습니다.”
+    - 검색된 문서 있는 경우: 챗봇에 내용 전달
+  
+# DB: RDS Aurora
+
+- MySQL
+    - `user_db` : 사용자 데이터
+        - 로그인 정보 테이블
+            
+            ```sql
+            DESCRIBE users;
+            +----------+--------------+------+-----+---------+----------------+
+            | Field    | Type         | Null | Key | Default | Extra          |
+            +----------+--------------+------+-----+---------+----------------+
+            | id       | int          | NO   | PRI | NULL    | auto_increment |
+            | username | varchar(100) | NO   | UNI | NULL    |                |
+            | password | varchar(255) | NO   |     | NULL    |                |
+            | nickname | varchar(100) | NO   |     | NULL    |                |
+            +----------+--------------+------+-----+---------+----------------+
+            ```
+            
+        - 채팅 기록 테이블
+            
+            ```sql
+            DESCRIBE chat_messages;
+            +-------------+-----------------+------+-----+-------------------+-------------------+
+            | Field       | Type            | Null | Key | Default           | Extra             |
+            +-------------+-----------------+------+-----+-------------------+-------------------+
+            | id          | bigint unsigned | NO   | PRI | NULL              | auto_increment    |
+            | user_id     | varchar(255)    | NO   |     | NULL              |                   |
+            | role        | varchar(10)     | NO   |     | NULL              |                   |
+            | content     | text            | NO   |     | NULL              |                   |
+            | prompt_type | varchar(50)     | YES  |     | NULL              |                   |
+            | created_at  | timestamp       | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+            +-------------+-----------------+------+-----+-------------------+-------------------+
+            ```
+            
+    - `mis_db`: 학사 정보 데이터
+        - 졸업 요건 테이블
+            
+            ```sql
+            DESCRIBE graduation_requirements;
+            +----------------+--------------+------+-----+---------+----------------+
+            | Field          | Type         | Null | Key | Default | Extra          |
+            +----------------+--------------+------+-----+---------+----------------+
+            | id             | int          | NO   | PRI | NULL    | auto_increment |
+            | admission_year | year         | NO   |     | NULL    |                |
+            | grade          | varchar(10)  | YES  |     | NULL    |                |
+            | semester       | varchar(20)  | YES  |     | NULL    |                |
+            | category       | varchar(50)  | YES  |     | NULL    |                |
+            | subject        | varchar(255) | YES  |     | NULL    |                |
+            | credit         | tinyint      | YES  |     | NULL    |                |
+            | theory_design  | tinyint      | YES  |     | NULL    |                |
+            | experiment     | tinyint      | YES  |     | NULL    |                |
+            | prerequisite   | varchar(255) | YES  |     | NULL    |                |
+            | note           | text         | YES  |     | NULL    |                |
+            | major          | varchar(100) | YES  |     | NULL    |                |
+            +----------------+--------------+------+-----+---------+----------------+
+            ```
+            
+        - 과목 정보 테이블
+            
+            ```sql
+            describe courses;
+            +-------------+--------------+------+-----+---------+-------+
+            | Field       | Type         | Null | Key | Default | Extra |
+            +-------------+--------------+------+-----+---------+-------+
+            | id          | int          | NO   | PRI | NULL    |       |
+            | name        | varchar(100) | YES  |     | NULL    |       |
+            | description | text         | YES  |     | NULL    |       |
+            +-------------+--------------+------+-----+---------+-------+
+            ```
+            
+- PostgreSQL
+    - `campus-mate` : RAG 반영할 데이터
+        - `mis_db` 의 데이터를 벡터로 변경한 테이블
+            
+            ```sql
+            \d documents
+                                                    Table "public.documents"
+               Column   |            Type             | Collation | Nullable |                Default                
+            ------------+-----------------------------+-----------+----------+---------------------------------------
+             id         | integer                     |           | not null | nextval('documents_id_seq'::regclass)
+             content    | text                        |           |          | 
+             embedding  | vector(512)                 |           |          | 
+             created_at | timestamp without time zone |           |          | now()
+            Indexes:
+                "documents_pkey" PRIMARY KEY, btree (id)
+                "documents_embedding_idx" hnsw (embedding vector_cosine_ops)
+            ```
+            
