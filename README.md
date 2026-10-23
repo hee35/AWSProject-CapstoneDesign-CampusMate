@@ -9,6 +9,7 @@
 - `professional.html`: Professional chat mode page  
 
 
+
 # Server: Python(FastAPI)
 
 1. 회원가입
@@ -93,6 +94,7 @@
     2. 채팅 화면 재연결
   
 
+
 # 벡터 DB 생성 과정
 
 ```python
@@ -142,6 +144,8 @@ async def startup_event():
         
     4. 임베딩 성공한 경우 UPDATE
 
+
+
 # 벡터 DB 검색 과정 `{rag_context}`
 
 1. 벡터 검색으로 관련 문서 찾기 `def search_similar_documents`
@@ -151,6 +155,8 @@ async def startup_event():
 2. 검색된 문서들 정리하여 전달 `def build_rag_context`
     - 검색된 문서 없는 경우: "관련 정보를 찾을 수 없습니다.”
     - 검색된 문서 있는 경우: 챗봇에 내용 전달
+
+
   
 # DB: RDS Aurora
 
