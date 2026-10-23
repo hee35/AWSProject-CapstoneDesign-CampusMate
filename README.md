@@ -10,7 +10,7 @@
 
 
 
-# Server: Python(FastAPI)
+## Server: Python(FastAPI)
 
 1. 회원가입
     
@@ -95,7 +95,7 @@
   
 
 
-# 벡터 DB 생성 과정
+## 벡터 DB 생성 과정
 
 ```python
 @app.on_event("startup")
@@ -146,7 +146,7 @@ async def startup_event():
 
 
 
-# 벡터 DB 검색 과정 `{rag_context}`
+## 벡터 DB 검색 과정 `{rag_context}`
 
 1. 벡터 검색으로 관련 문서 찾기 `def search_similar_documents`
     1. 질문을 임베딩으로 변환(Titan Text Embeddings V2)
@@ -158,7 +158,7 @@ async def startup_event():
 
 
   
-# DB: RDS Aurora
+## DB: RDS Aurora
 
 - MySQL
     - `user_db` : 사용자 데이터
