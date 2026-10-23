@@ -1,4 +1,5 @@
-# CampusMate [notion link](https://kimheejoo.notion.site/capstonedesign)
+# CampusMate 
+[notion link](https://kimheejoo.notion.site/capstonedesign)
 
 - `main.py`: Backend server (connected to Bedrock Claude 3.5 Sonnet)  
 - `index.html`: Landing page (Start)  
